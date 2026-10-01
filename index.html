@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="nl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e8a8f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Woordentrainer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Woordentrainer</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1d2b2e;--card:#fff;--mut:#6b7b7e;--ac:#0e8a8f;--bd:#d9e2e2;--ok:#2e9e5b;--no:#d1493f;--gold:#e8a317;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a1b;--fg:#e8f0f0;--card:#1b2628;--mut:#93a5a8;--ac:#3cc0c5;--bd:#2c3b3d}}
+:root[data-theme="dark"]{--bg:#121a1b;--fg:#e8f0f0;--card:#1b2628;--mut:#93a5a8;--ac:#3cc0c5;--bd:#2c3b3d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 10px;color:var(--ac)}
+#hd{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px 14px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;font-weight:600;font-size:15px}
+.bar{height:10px;border-radius:6px;background:var(--bd);margin:8px 0;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ac),var(--gold));transition:width .4s}
+.bdg{font-size:20px;letter-spacing:4px}.bdg s{text-decoration:none;opacity:.2;filter:grayscale(1)}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+nav button,.b{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--fg);padding:8px 12px;border-radius:10px;cursor:pointer}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+select{font:inherit;padding:5px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px}
+.sc{color:var(--mut);font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.word{font-size:28px;letter-spacing:5px;text-align:center;margin:12px 0;font-weight:600;word-break:break-all}
+.keys,.opts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.keys button{width:34px;height:38px;padding:0}
+.b:disabled{opacity:.4;cursor:default}
+.b.ok{background:var(--ok);color:#fff;border-color:var(--ok)}.b.no{background:var(--no);color:#fff;border-color:var(--no)}
+.msg{text-align:center;min-height:26px;margin:10px 0;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mc{min-height:64px;font-size:14px;padding:4px;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid var(--bd);border-radius:10px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;word-break:break-word}
+.mc.up{background:var(--card);color:var(--fg)}.mc.done{background:var(--ok);color:#fff;border-color:var(--ok)}
+.q{font-size:22px;text-align:center;margin:16px 0}.q u{display:inline-block;min-width:60px;color:var(--ac)}
+.zone{min-height:54px;border:2px dashed var(--bd);border-radius:10px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.t{padding:6px 10px}
+.row{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.big{font-size:44px;text-align:center}
+svg{display:block;margin:0 auto;width:140px;height:140px}svg *{stroke:var(--fg);stroke-width:4;fill:none;stroke-linecap:round}
+#ts{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,80px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:20px;opacity:0;transition:.3s;font-weight:600;z-index:9}#ts.show{transform:translate(-50%,0);opacity:1}
+input,textarea{font:inherit;width:100%;padding:8px;margin:0 0 8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg)}textarea{min-height:70px}.it{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:14px}
+#tb{transition:none}
+@keyframes pop{50%{transform:scale(1.15)}}.pop{animation:pop .3s}
+</style></head><body><main>
+<h1>Woordentrainer</h1>
+<div id="hd"></div>
+<nav id="nav"></nav>
+<div id="app" class="card"></div>
+</main><div id="ts"></div>
+<script>
+/* DATA: verb | preposition | chapter (Bijlage 6) */
+const PR=`zich aanpassen|aan|4;in aanraking komen|met|4;afhankelijk zijn|van|2;afkomstig zijn|uit|4;afleiden|uit|2;afleiden|van|5;afstand nemen|van|2;beginnen|met|1;behoren|tot|1;beperken|tot|1;beschuldigen|van|5;beslissen|over|1;bestaan|uit|1;besteden|aan|2;bestemd zijn|voor|6;bezig zijn|met|3;blijken|uit|1;blootstellen|aan|6;brengen|naar|1;communiceren|met|3;controleren|op|1;te danken hebben|aan|3;delen|met|1;denken|aan|1;doorbrengen|met|2;doorgaan|met|1;doorstromen|naar|4;dromen|over|1;zich druk maken|over|5;effect hebben|op|2;enthousiast zijn|over|2;zich ergeren|aan|2;gaan|naar|1;geïnteresseerd zijn|in|6;geloven|in|1;genieten|van|1;gericht zijn|op|2;geven|aan|1;geven|om|2;gissen|naar|5;een hekel hebben|aan|0;helpen|met|1;herinneren|aan|1;hopen|op|1;horen|bij|0;houden|van|1;hulp geven|aan|4;ingaan|op|1;inspelen|op|4;inzetten|voor|4;kiezen|voor|4;kijken|naar|1;klagen|over|4;lachen|om|1;leiden|tot|1;leren|van|2;letten|op|2;leveren|aan|1;lijden|onder|4;lijken|op|1;luisteren|naar|1;te maken hebben|met|5;meedoen|aan|2;mopperen|op|4;nadenken|over|2;de nadruk leggen|op|2;oefenen|met|1;omgaan|met|4;omspringen|met|4;zich onderscheiden|door|5;onderscheiden|van|3;onderzoek doen|naar|2;ontkomen|aan|3;onttrekken|aan|6;zich ontwikkelen|tot|3;opkijken|van|2;opmaken|uit|3;oproepen|tot|5;opsluiten|in|5;overeenstemmen|met|5;overschakelen|op|4;overtuigd zijn|van|3;passen|op|1;problemen hebben|met|3;profiteren|van|4;reageren|op|1;recht hebben|op|4;rekenen|op|2;rekening houden|met|2;zich richten|op|2;samenwerken|met|6;schrijven|aan|1;schrikken|van|1;schuld geven|aan|3;zich schuldig maken|aan|3;spijt hebben|van|3;spreken|over|1;staren|naar|2;stemmen|op|1;stoppen|met|1;toegeven|aan|1;toekomen|aan|3;toevoegen|aan|2;trekken|aan|1;trots zijn|op|4;trouwen|met|1;uitgaan|van|3;zich verantwoordelijk voelen|voor|4;verantwoordelijk zijn|voor|4;vergelijken|met|1;verhuizen|naar|5;verslaafd zijn|aan|2;vertellen|aan|1;zich verzetten|tegen|4;voldoen|aan|5;zich voorbereiden|op|1;voorstellen|aan|1;voorzichtig zijn|met|3;vragen|aan|1;wachten|op|1;waken|voor|5;wandelen|met|3;wennen|aan|1;wijden|aan|4;wijten|aan|6;wijzen|naar|1;zeggen|tegen|1;zin hebben|in|1;zoeken|naar|1;zorgen|voor|3`.split(";").map(s=>{const[t,p,c]=s.split("|");return{t,p,c:+c}});
+/* Bijlage 7 vocabulary: word:chapter */
+const VOC=`bovenal:5 bulderen:6 coulant:2 excessief:2 fulmineren:2 gelikt:5 keurslijf:2 kiekje:6 leuteren:2 lichtvaardig:6 ontrafeld:5 schromelijk:2 teneur:5 toonaangevend:5 uitgebannen:6 verloedering:5 verstomd:5 vrijbuiter:2 weerwoord:2 aandachtspunt:1 aandeel:3 aangezien:1 aanmaken:2 aanpak:4 aanpakken:4 aanraken:4 aanraking:4 aanschaf:5 aanschaffen:5 aanspreken:4 aanstellen:4 aanstelling:4 aantonen:6 aarzelen:1 aarzeling:1 achterhaald:4 adem:1 afdwingen:4 afkomst:4 afkomstig:4 afronden:6 afwijken:2 afwijking:2 amper:6 begaan:5 begeleiden:1 begeleiding:1 behandelen:4 behandeling:4 beheersen:2 beheersing:2 beledigen:1 belediging:1 benadrukken:3 beoogd:5 beslaan:6 beslist:2 bevorderen:4 bewaren:1 beweegreden:5 beweren:1 bewering:1 boeien:2 boeiend:2 braaf:3 daadwerkelijk:4 daardoor:1 daarna:1 daarom:1 daarvoor:1 dankzij:4 destijds:5 diepte:5 doordringen:2 doorzichtig:6 eis:4 eisen:4 elders:2 eng:5 ergernis:2 fatsoenlijk:4 fel:2 gaaf:1 gaandeweg:6 gebeurtenis:1 geest:1 gelijkwaardig:3 geloofwaardig:1 gemengd:4 geoorloofd:5 gespannen:1 gevaarlijk:2 gevoelig:1 gids:4 gissen:5 gooien:2 grof:4 grondig:5 grotendeels:5 gunst:3 haast:2 haasten:2 haastig:2 hetgeen:5 hoop:3 huidig:6 inademen:1 inademing:1 indien:1 inrichten:4 inrichting:4 invalshoek:5 inzet:4 jargon:3 keurig:1 kleuter:4 klusje:3 klussen:3 knikken:2 kring:4 kriskras:6 leiding:4 leidinggevende:4 litteken:3 mede:4 meerderheid:4 mislukken:4 mits:1 moeizaam:3 mopperen:4 naald:3 naarmate:1 nagenieten:1 nauw:6 neigen:1 neiging:1 ofschoon:1 omstreden:6 omwille:6 onderdrukken:4 onderdrukking:4 ondergeschikt:1 onderhoud:4 onderhouden:4 onderschatten:5 onderschatting:5 onderscheid:5 onderscheiden:5 ondersteunen:4 ondertussen:1 ontroerend:3 ontroering:3 onverstandig:2 onvoorstelbaar:2 opdat:1 opeisen:4 oproep:5 oproepen:5 opsluiten:5 opvang:3 opvangen:3 opvatten:4 opvatting:4 opzichtig:3 overbelast:1 overdrijven:2 overeenstemmen:5 overeenstemming:5 overigens:3 overkant:2 overmatig:2 overnemen:6 overtuigen:3 overtuiging:3 overwegen:6 overweging:6 pand:6 peilen:5 peiling:5 pikken:5 pittig:3 platteland:4 prestatie:4 proppen:5 redelijk:1 rimpel:3 schande:2 schandelijk:2 schattig:5 schets:4 schetsen:4 schoonheid:1 schuilen:6 sinds:1 stapelen:2 staren:2 suggereren:1 suggestie:1 tekortkomen:2 telkens:2 tenzij:1 toegang:1 toeteren:2 toevoeging:1 troep:2 trouw:1 uitademen:1 uitademing:1 uitbundig:3 uiting:2 uitpuilen:6 uitsluitend:4 uitvinden:1 uitvinding:1 vandaar:4 verdelen:3 verdeling:3 verhouding:4 verminderen:1 vermindering:1 veroveren:5 verovering:5 verpesten:3 verrassen:1 verrassing:1 verrichten:6 verrichting:6 versieren:3 versiering:3 verslaving:2 verslinden:6 verstand:2 verstandig:2 verstoren:5 verwarren:2 verwarrend:2 verwarring:2 verwijderen:6 verwijdering:6 verzet:4 verzwakken:5 vloeiend:4 voorrang:2 voortijdig:4 voortzetten:6 voortzetting:6 waarnemen:1 waarneming:1 werkelijkheid:4 zielig:3 zogenaamd:6 zolang:1 zonde:6 zorg:6 zowat:2 zwerven:3`.split(" ").map(s=>{const[w,c]=s.split(":");return{w,c:+c}});
+/* English glosses I added for a subset (not in the PDF) */
+const EN={aarzelen:"to hesitate",adem:"breath",gebeurtenis:"event",geest:"spirit / mind",verrassen:"to surprise",werkelijkheid:"reality",overtuigen:"to convince",verstandig:"sensible",gevaarlijk:"dangerous",beledigen:"to insult",bewaren:"to keep",eisen:"to demand",haastig:"hasty",schande:"shame",verwarring:"confusion",vrijbuiter:"buccaneer",toevoeging:"addition",verminderen:"to reduce",waarnemen:"to observe",overwegen:"to consider",verdelen:"to divide",schoonheid:"beauty",uitvinden:"to invent",verzet:"resistance",onderhouden:"to maintain",veroveren:"to conquer",suggereren:"to suggest",zwerven:"to wander",neiging:"tendency",opvatting:"opinion"};
+`bovenal=above all;bulderen=to roar;coulant=accommodating;excessief=excessive;fulmineren=to rail against;gelikt=slick;keurslijf=straitjacket;kiekje=snapshot;leuteren=to babble;lichtvaardig=frivolous;ontrafeld=unravelled;schromelijk=grossly;teneur=tenor, gist;toonaangevend=leading;uitgebannen=banished;verloedering=degradation;verstomd=dumbfounded;weerwoord=retort;aandachtspunt=point of attention;aandeel=share;aangezien=given that;aanmaken=to create;aanpak=approach;aanpakken=to tackle;aanraken=to touch;aanraking=contact;aanschaf=purchase;aanschaffen=to purchase;aanspreken=to address;aanstellen=to appoint;aanstelling=appointment;aantonen=to demonstrate;aarzeling=hesitation;achterhaald=outdated;afdwingen=to enforce;afkomst=origin;afkomstig=originating;afronden=to finish off;afwijken=to deviate;afwijking=deviation;amper=barely;begaan=to commit;begeleiden=to accompany;begeleiding=guidance;behandelen=to treat;behandeling=treatment;beheersen=to master;beheersing=control;belediging=insult;benadrukken=to emphasize;beoogd=intended;beslaan=to cover;beslist=definitely;bevorderen=to promote;beweegreden=motive;beweren=to claim;bewering=assertion;boeien=to captivate;boeiend=captivating;braaf=well-behaved;daadwerkelijk=actual;daardoor=because of that;daarna=afterwards;daarom=therefore;daarvoor=before that;dankzij=thanks to;destijds=at the time;diepte=depth;doordringen=to penetrate;doorzichtig=transparent;eis=demand;elders=elsewhere;eng=scary;ergernis=annoyance;fatsoenlijk=decent;fel=fierce;gaaf=cool;gaandeweg=gradually;gelijkwaardig=equivalent;geloofwaardig=credible;gemengd=mixed;geoorloofd=permitted;gespannen=tense;gevoelig=sensitive;gids=guide;gissen=to guess;gooien=to throw;grof=coarse;grondig=thorough;grotendeels=largely;gunst=favour;haast=hurry;haasten=to hurry;hetgeen=that which;hoop=hope;huidig=current;inademen=to inhale;inademing=inhalation;indien=if;inrichten=to furnish;inrichting=layout;invalshoek=angle of approach;inzet=commitment;jargon=jargon;keurig=neat;kleuter=toddler;klusje=small job;klussen=to do odd jobs;knikken=to nod;kring=circle;kriskras=criss-cross;leiding=leadership;leidinggevende=manager;litteken=scar;mede=also;meerderheid=majority;mislukken=to fail;mits=provided that;moeizaam=laborious;mopperen=to grumble;naald=needle;naarmate=as (progressively);nagenieten=to savour afterwards;nauw=narrow;neigen=to tend;ofschoon=although;omstreden=controversial;omwille=for the sake of;onderdrukken=to suppress;onderdrukking=oppression;ondergeschikt=subordinate;onderhoud=maintenance;onderschatten=to underestimate;onderschatting=underestimation;onderscheid=distinction;onderscheiden=to distinguish;ondersteunen=to support;ondertussen=meanwhile;ontroerend=touching;ontroering=emotion;onverstandig=unwise;onvoorstelbaar=unimaginable;opdat=so that;opeisen=to demand back;oproep=call, appeal;oproepen=to summon;opsluiten=to lock up;opvang=shelter;opvangen=to catch;opvatten=to interpret;opzichtig=flashy;overbelast=overloaded;overdrijven=to exaggerate;overeenstemmen=to agree with;overeenstemming=agreement;overigens=incidentally;overkant=other side;overmatig=immoderate;overnemen=to take over;overtuiging=conviction;overweging=consideration;pand=building;peilen=to gauge;peiling=poll;pikken=to nick, to pinch;pittig=spicy, tough;platteland=countryside;prestatie=achievement;proppen=to stuff;redelijk=reasonable;rimpel=wrinkle;schandelijk=disgraceful;schattig=cute;schets=sketch;schetsen=to sketch;schuilen=to take shelter;sinds=since;stapelen=to stack;staren=to stare;suggestie=suggestion;tekortkomen=to fall short;telkens=each time;tenzij=unless;toegang=access;toeteren=to honk;troep=mess;trouw=loyal;uitademen=to exhale;uitademing=exhalation;uitbundig=exuberant;uiting=expression;uitpuilen=to bulge;uitsluitend=exclusively;uitvinding=invention;vandaar=hence;verdeling=distribution;verhouding=relationship, ratio;vermindering=reduction;verovering=conquest;verpesten=to ruin;verrassing=surprise;verrichten=to perform;verrichting=action;versieren=to decorate;versiering=decoration;verslaving=addiction;verslinden=to devour;verstand=reason, intellect;verstoren=to disturb;verwarren=to confuse;verwarrend=confusing;verwijderen=to remove;verwijdering=removal;verzwakken=to weaken;vloeiend=fluent;voorrang=priority;voortijdig=premature;voortzetten=to continue;voortzetting=continuation;waarneming=observation;zielig=pitiful;zogenaamd=so-called;zolang=as long as;zonde=sin, pity;zorg=care, worry;zowat=roughly;zwerven=to wander`.split(";").forEach(s=>{const[a,b]=s.split("=");EN[a]=b});
+const IDI=`het komt je niet aanwaaien|it doesn't just fall into your lap|3;het positiefste wat ervan af kan|the best that can be said about it|1;geen blad voor de mond nemen|to speak bluntly|3;met de deur in huis vallen|to blurt it out straight away|5;zijn doel voorbij schieten|to overshoot the mark|5;ergens om draaien|to be what something is about|5;er dwars doorheen kijken|to see right through something|5;het gelijk aan je zijde hebben|to be in the right|3;in het geweer komen|to take action in protest|3;aan de grond raken|to run aground, to stall|2;geen haar op m'n hoofd die daaraan denkt|not a chance|3;de handen uit de mouwen steken|to roll up your sleeves|2;naar hartenlust|to your heart's content|6;het erover hebben|to be talking about it|6;iets uit je hoofd laten|to refrain from doing something|5;koste wat (het) kost|at all costs|2;het kwartje valt|the penny drops|6;iets onder de loep nemen|to scrutinise something|3;uit de lucht komen vallen|to appear out of the blue|5;iets in de markt zetten|to market something|2;het niet meekrijgen|to miss it, not to catch it|5;iemand met de neus op de feiten drukken|to confront someone with the facts|2;je de ogen doen openen|to open your eyes|6;ergens van opkijken|to be surprised by something|1;er is iets niet in orde|something is wrong|2;op pad gaan|to set off|6;het slaat nergens op|it makes no sense|5;aan de slag gaan|to get to work|2;je sporen achterlaten|to leave your mark|3;iets niet onder stoelen of banken steken|to make no secret of something|5;van top tot teen|from head to toe|3;iets waar je u tegen zegt|something very imposing|2;dan wordt het een ander verhaal|then it's a different story|2;in de weer zijn|to be busy|3;met alle winden meewaaien|to follow every fashion|5;het voor het zeggen hebben|to be in charge|3;te allen tijde|at all times|5;in de war raken|to get confused|2;ter sprake komen|to be brought up|2;met name|in particular|3;van nature|by nature|1;overeind blijven|to remain standing|5;tot stand komen|to come into being|5;per se|necessarily|5;vanouds|from of old|4;iets niet uitvlakken|not to wipe something out|1`.split(";").map(s=>{const[t,m,c]=s.split("|");return{t,m,c:+c}});
+const SC=[1,4,2,2,1,3,1,4,3,1,1,2,1,6,5,5];
+const SEN=["Ik wacht al een uur op de bus.","Zij is erg trots op haar zoon.","We moeten goed nadenken over de oplossing.","Hij is afhankelijk van zijn ouders.","Zij luistert graag naar muziek.","Ik ben overtuigd van zijn eerlijkheid.","De groep bestaat uit tien mensen.","Hij klaagt de hele dag over het weer.","Zij zorgt goed voor haar moeder.","Wij hopen op mooi weer.","Ik denk vaak aan mijn vakantie.","Hij is verslaafd aan zijn telefoon.","Kun je me helpen met mijn huiswerk?","Ik ben geïnteresseerd in geschiedenis.","Hij verhuist volgend jaar naar Utrecht.","Zij voldoet aan alle eisen."];
+
+/* STATE + GAMIFICATION */
+const sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+let G={xp:0,corr:0,wins:0,best:0},combo=0,ch=0,cur="Galgje";
+try{G=Object.assign(G,JSON.parse(localStorage.getItem("wt")||"{}"))}catch(e){}G.ach=G.ach||[];
+const save=()=>{try{localStorage.setItem("wt",JSON.stringify(G))}catch(e){}};
+const lvl=()=>Math.floor(G.xp/100)+1;
+const AC=[["a1","🌱","Eerste goede antwoord",()=>G.corr>=1],["a2","📚","50 goede antwoorden",()=>G.corr>=50],["a3","🔥","Combo ×5",()=>combo>=5],["a4","⚡","Combo ×10",()=>combo>=10],["a5","🏆","Eerste spel gewonnen",()=>G.wins>=1],["a6","⭐","Niveau 5",()=>lvl()>=5],["a7","🎯","10 spellen gewonnen",()=>G.wins>=10]];
+function toast(m){const t=document.getElementById("ts");t.textContent=m;t.classList.add("show");clearTimeout(toast.i);toast.i=setTimeout(()=>t.classList.remove("show"),2400)}
+function hdr(){document.getElementById("hd").innerHTML=`<div class="top"><span>Niveau ${lvl()}</span><span>${combo>1?"🔥 ×"+(1+Math.min(combo-1,5)*.2).toFixed(1)+" combo ("+combo+")":"Combo: 0"}</span><span>${G.xp%100}/100 XP</span></div><div class="bar"><i style="width:${G.xp%100}%"></i></div><div class="bdg">${AC.map(a=>`<s ${G.ach.includes(a[0])?'style="opacity:1;filter:none"':""} title="${a[2]}">${a[1]}</s>`).join("")}</div>`}
+function chk(){AC.forEach(a=>{if(!G.ach.includes(a[0])&&a[3]()){G.ach.push(a[0]);toast("🏅 Badge: "+a[2])}})}
+function good(b){combo++;const x=Math.round(b*(1+Math.min(combo-1,5)*.2)),L=lvl();G.xp+=x;G.corr++;if(lvl()>L)toast("🎉 Niveau "+lvl()+"!");chk();save();hdr();return x}
+function bad(){combo=0;hdr()}
+function won(){G.wins++;chk();save();hdr()}
+const app=document.getElementById("app"),nav=document.getElementById("nav"),h=s=>app.innerHTML=s;
+/* TIMER */
+const B=[0,20,12,8],TN=["Uit","Rustig","Normaal","Snel"];let T=0;
+try{T=(+localStorage.getItem("wt_t"))%4||0}catch(e){}
+const TS=()=>B[T];let TM={id:0,end:0,tot:0};
+function tstop(){clearInterval(TM.id);TM.id=0}
+function tstart(sec,cb){tstop();if(!sec)return;TM.tot=sec*1000;TM.end=Date.now()+TM.tot;TM.id=setInterval(()=>{const l=TM.end-Date.now(),b=document.getElementById("tb"),t=document.getElementById("tt");if(b){b.style.width=Math.max(0,l/TM.tot*100)+"%";b.style.background=l<TM.tot*.25?"var(--no)":""}if(t)t.textContent="⏱ "+Math.max(0,Math.ceil(l/1000))+"s";if(l<=0){tstop();cb()}},100)}
+const tbar=()=>TS()?`<div class="sc"><span id="tt">⏱</span></div><div class="bar" style="margin-top:0"><i id="tb" style="width:100%"></i></div>`:"";
+const games={"Galgje":hang,"Memory":mem,"Voorzetsels":prep,"Zinnen":scr,"Idiomen":idi,"Mijn woorden":mine,"Verleden tijd":ver,"Voortgang":prog};
+Object.keys(games).forEach(k=>{const b=document.createElement("button");b.textContent=k;b.onclick=()=>go(k);nav.appendChild(b)});
+const tbn=document.createElement("button");tbn.textContent="⏱ Timer: "+TN[T];tbn.onclick=()=>{T=(T+1)%4;try{localStorage.setItem("wt_t",T)}catch(e){}tbn.textContent="⏱ Timer: "+TN[T];games[cur]()};nav.appendChild(tbn);
+function go(k){tstop();cur=k;[...nav.children].forEach(b=>b.classList.toggle("on",b.textContent==k));games[k]()}
+const chSel=()=>`<select id="ch">${["Alle hoofdstukken",1,2,3,4,5,6,"Mijn woorden"].map((o,i)=>`<option value="${i}" ${i==ch?"selected":""}>${i==7?o:i?"Hoofdstuk "+o:o}</option>`).join("")}</select>`;
+const bindCh=()=>{const s=document.getElementById("ch");if(s)s.onchange=()=>{ch=+s.value;games[cur]()}};
+const pool=(a,k)=>{const f=a.filter(x=>(!ch||x.c==ch)&&!isK(x)),g=a.filter(x=>!isK(x));return f.length?f:g.length?g:a};
+
+/* GALGJE (5 mistakes) */
+function hang(){
+ const MAX=5,e=pick(pool(VOC)),w=e.w;let g=[],bd=0,xp=0;if(TS())tstart(TS()*4,()=>{bd=MAX;bad();rec("v:"+w,0);draw()});
+ const parts=['<line x1="20" y1="140" x2="130" y2="140"/><line x1="40" y1="140" x2="40" y2="15"/><line x1="40" y1="15" x2="100" y2="15"/><line x1="100" y1="15" x2="100" y2="35"/>','<circle cx="100" cy="48" r="13"/>','<line x1="100" y1="61" x2="100" y2="100"/>','<line x1="100" y1="70" x2="80" y2="90"/><line x1="100" y1="70" x2="120" y2="90"/>','<line x1="100" y1="100" x2="85" y2="125"/>','<line x1="100" y1="100" x2="115" y2="125"/>'];
+ function draw(){
+  const wn=[...w].every(c=>g.includes(c)||!/[a-z]/.test(c)),lo=bd>=MAX,end=wn||lo;if(end)tstop();
+  h(`<div class="sc"><span>❤️ ${"❤️".repeat(MAX-bd)}${"🖤".repeat(bd)}</span>${chSel()}</div>
+  ${tbar()}<svg viewBox="0 0 150 150">${parts.slice(0,bd+1).join("")}</svg>
+  <div class="word">${[...w].map(c=>g.includes(c)||lo||!/[a-z]/.test(c)?c:"_").join(" ")}</div>
+  <div class="sc" style="justify-content:center">Vertaling: <b>&nbsp;${EN[w]||"?"}&nbsp;</b> · ${w.length} letters · ${e.c==7?"mijn lijst":"hoofdstuk "+e.c}</div>
+  <div class="msg" style="color:var(--${wn?"ok":"no"})">${wn?"Goed zo! +"+xp+" XP 🎉":lo?"Het woord was: "+w:""}</div>
+  <div class="keys">${"abcdefghijklmnopqrstuvwxyz".split("").map(c=>`<button class="b ${g.includes(c)?(w.includes(c)?"ok":"no"):""}" ${g.includes(c)||end?"disabled":""} data-c="${c}">${c}</button>`).join("")}</div>
+  <div class="row"><button class="b" id="nx">Nieuw woord</button>${knBtn()}</div>`);bindCh();
+  app.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{const c=b.dataset.c;g.push(c);
+   if(!w.includes(c)){bad();bd++;if(bd>=MAX)rec("v:"+w,0)}else if([...w].every(x=>g.includes(x)||!/[a-z]/.test(x))){xp=good(10+(MAX-bd)*4);won();rec("v:"+w,1)}
+   draw()});
+  document.getElementById("nx").onclick=()=>{if(!end)bad();hang()};bindKn("v:"+w,hang);
+ }
+ draw();
+}
+
+/* MEMORY */
+let mm="v",mlv=1;
+function mem(){
+ let pairs;
+ if(mm=="v"){const seen=new Set();pairs=sh(pool(PR)).filter(x=>!seen.has(x.p)&&seen.add(x.p)).slice(0,[4,6,10][mlv]).map(x=>[x.t,x.p])}
+ else{const u=new Set();pairs=sh(pool(VOC)).filter(x=>EN[x.w]&&!u.has(EN[x.w])&&u.add(EN[x.w])).slice(0,[4,6,10][mlv]).map(x=>[x.w,EN[x.w]])}
+ const n=pairs.length;
+ let cards=sh(pairs.flatMap((p,i)=>[{t:p[0],i},{t:p[1],i}])),open=[],done=new Set(),mv=0,lock=false,tout=false;if(TS())tstart(TS()*n,()=>{tout=true;bad();draw()});
+ function draw(){
+  const fin=done.size==n,st=mv<=n+3?3:mv<=n*2?2:1;if(fin||tout)tstop();
+  h(`<div class="sc"><span>Zetten: ${mv} · Paren: ${done.size}/${n}</span><span><select id="md"><option value="v" ${mm=="v"?"selected":""}>Werkwoord ↔ voorzetsel</option><option value="e" ${mm=="e"?"selected":""}>Woord ↔ Engels</option></select></span></div>
+  <div class="sc">${chSel()}<select id="lv">${["Makkelijk (4 paren)","Gemiddeld (6 paren)","Moeilijk (10 paren)"].map((o,i)=>`<option value="${i}" ${i==mlv?"selected":""}>${o}</option>`).join("")}</select></div>
+  ${tbar()}<div class="grid">${cards.map((c,k)=>{const up=open.includes(k)||done.has(c.i);return `<button class="mc ${up?"up":""} ${done.has(c.i)?"done":""}" data-n="${k}">${up?c.t:"?"}</button>`}).join("")}</div>
+  <div class="msg">${fin?"Klaar! "+"⭐".repeat(st)+" 🎉":tout?"⏰ Tijd is om!":"Zoek de passende paren."}</div>
+  <div class="row"><button class="b" id="nx">Opnieuw</button></div>`);bindCh();
+  document.getElementById("md").onchange=e=>{mm=e.target.value;mem()};document.getElementById("lv").onchange=e=>{mlv=+e.target.value;mem()};
+  document.getElementById("nx").onclick=mem;
+  app.querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{
+   const k=+b.dataset.n;if(tout||lock||open.includes(k)||done.has(cards[k].i))return;
+   open.push(k);draw();
+   if(open.length==2){mv++;const[a,c]=open;
+    if(cards[a].i==cards[c].i){done.add(cards[a].i);open=[];good(5);if(done.size==n){good(Math.round(st*10*[1,1.5,2][mlv]));won()}draw()}
+    else{lock=true;bad();setTimeout(()=>{open=[];lock=false;draw()},900)}}
+  });
+ }
+ draw();
+}
+
+/* VOORZETSELS (3 lives, endless run) */
+let ps=0,lv=3;
+function prep(fresh){
+ if(fresh!==false){ps=0;lv=3}
+ const all=[...new Set(PR.map(p=>p.p))],q=pick(pool(PR));let ans=null;if(TS())tstart(TS(),()=>{if(ans==null){ans="⏰";lv--;bad();rec(keyOf(q),0);draw()}});
+ function draw(){
+  if(lv<=0){tstop();if(ps>G.best){G.best=ps;save()}
+   h(`<div class="big">💀</div><div class="msg">Game over! Score: ${ps} · Record: ${G.best}</div><div class="row"><button class="b" id="nx">Opnieuw spelen</button></div>`);
+   document.getElementById("nx").onclick=()=>prep();return}
+  h(`<div class="sc"><span>${"❤️".repeat(lv)}</span><span>Score: ${ps}</span>${chSel()}</div>
+  ${tbar()}<div class="q ${ans==q.p?"pop":""}">${q.t} <u>${ans||"&nbsp;"}</u></div>
+  <div class="opts">${all.map(o=>`<button class="b ${ans?(o==q.p?"ok":o==ans?"no":""):""}" ${ans?"disabled":""} data-o="${o}">${o}</button>`).join("")}</div>
+  <div class="msg" style="color:var(--${ans==q.p?"ok":"no"})">${ans?(ans==q.p?"Juist! ✓":"Fout — "+q.t+" "+q.p):""}</div>
+  <div class="row">${ans?'<button class="b" id="nx">Volgende →</button>':""}${knBtn()}</div>`);
+  const s=document.getElementById("ch");if(s)s.onchange=()=>{ch=+s.value;prep()};
+  app.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{tstop();ans=b.dataset.o;rec(keyOf(q),ans==q.p);if(ans==q.p){ps++;good(8);if(ps%10==0)won()}else{lv--;bad()}draw()});
+  const nx=document.getElementById("nx");if(nx)nx.onclick=()=>prep(false);bindKn(keyOf(q),()=>prep(false));
+ }
+ draw();
+}
+
+/* ZINNEN */
+function scr(){
+ const fx=pool(ALL),e=pick(fx),s=e.s,toks=s.split(" "),t0=Date.now();let pl,bt=[],res="",out=false;
+ do pl=sh(toks.map(t=>({t})));while(pl.map(x=>x.t).join(" ")==s);if(TS())tstart(TS()*3,()=>{out=true;bad();if(e.w)rec("v:"+e.w,0);res="⏰ Tijd is om! "+s;draw()});
+ function draw(){
+  h(`<div class="sc"><span>Zet de zin in orde${e.w?` · <b>${e.w}</b> = ${EN[e.w]||""}`:""}</span>${chSel()}</div>
+  ${tbar()}<div class="zone">${bt.map((x,n)=>`<button class="b t" data-b="${n}">${x.t}</button>`).join("")}</div>
+  <div class="opts">${pl.map((x,n)=>`<button class="b t" data-p="${n}">${x.t}</button>`).join("")}</div>
+  <div class="msg" style="color:var(--${res.startsWith("✓")?"ok":"no"})">${res}</div>
+  <div class="row"><button class="b" id="ck">Controleer</button><button class="b" id="rs">Wissen</button><button class="b" id="nx">Nieuwe zin</button>${e.w?knBtn():""}</div>`);
+  bindCh();app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{if(out)return;bt.push(pl.splice(+b.dataset.p,1)[0]);res="";draw()});
+  app.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{if(out)return;pl.push(bt.splice(+b.dataset.b,1)[0]);res="";draw()});
+  document.getElementById("ck").onclick=()=>{if(out)return;
+   if(bt.map(x=>x.t).join(" ")==s){tstop();if(e.w)rec("v:"+e.w,1);const sec=(Date.now()-t0)/1000,x=good(15+Math.max(0,Math.round(20-sec/2)));won();res="✓ Correct! +"+x+" XP"+(sec<20?" (snelheidsbonus ⚡)":"")}
+   else{bad();if(e.w)rec("v:"+e.w,0);res="Nog niet goed, probeer het opnieuw."}draw()};
+  document.getElementById("rs").onclick=()=>{pl=pl.concat(bt);bt=[];res="";draw()};
+  document.getElementById("nx").onclick=scr;if(e.w)bindKn("v:"+e.w,scr);
+ }
+ draw();
+}
+const SV=`bovenal|Bovenal wil ik gezond blijven.
+bulderen|De wind buldert om het huis.
+coulant|De winkel is erg coulant met retouren.
+excessief|Hij gebruikt excessief veel zout.
+fulmineren|De politicus fulmineert tegen de regels.
+gelikt|Het plan ziet er gelikt uit.
+keurslijf|Ik voel me gevangen in dit keurslijf.
+kiekje|Zij maakte een kiekje van de kat.
+leuteren|Zij zitten urenlang te leuteren.
+lichtvaardig|Hij nam een lichtvaardig besluit.
+ontrafeld|De zaak werd eindelijk ontrafeld.
+schromelijk|Zij werd schromelijk onderschat.
+teneur|De teneur van het gesprek was positief.
+toonaangevend|Dit is een toonaangevend bedrijf.
+uitgebannen|Dat woord is uitgebannen uit de taal.
+verloedering|De verloedering van de buurt zorgt voor onrust.
+verstomd|Wij waren verstomd over het nieuws.
+vrijbuiter|De vrijbuiter zeilde de zee op.
+weerwoord|Ik had geen weerwoord op zijn kritiek.
+aandachtspunt|Dit is een belangrijk aandachtspunt.
+aandeel|Zij heeft een groot aandeel in het succes.
+aangezien|Aangezien het regent, blijven we thuis.
+aanmaken|Je moet eerst een account aanmaken.
+aanpak|Zijn aanpak werkt heel goed.
+aanpakken|We moeten dit probleem aanpakken.
+aanraken|Je mag het schilderij niet aanraken.
+aanraking|Hij kwam in aanraking met de politie.
+aanschaf|De aanschaf van een auto is duur.
+aanschaffen|Wij willen een nieuwe computer aanschaffen.
+aanspreken|Hij durfde haar niet aan te spreken.
+aanstellen|De baas wil een nieuwe manager aanstellen.
+aanstelling|Zij kreeg een vaste aanstelling.
+aantonen|Het onderzoek kan dat aantonen.
+aarzelen|Hij aarzelt om ja te zeggen.
+aarzeling|Zonder aarzeling sprong hij in het water.
+achterhaald|Die methode is allang achterhaald.
+adem|Ik hield mijn adem in.
+afdwingen|Je kunt respect niet afdwingen.
+afkomst|Zijn afkomst speelt geen rol.
+afkomstig|Zij is afkomstig uit Spanje.
+afronden|Ik moet mijn studie nog afronden.
+afwijken|Het resultaat mag niet afwijken van het plan.
+afwijking|Er is een kleine afwijking in de cijfers.
+amper|Ik heb amper geslapen.
+begaan|Hij heeft een grote fout begaan.
+begeleiden|De leraar begeleidt de leerlingen.
+begeleiding|Zij krijgt begeleiding bij haar werk.
+behandelen|De arts moet de patiënt behandelen.
+behandeling|De behandeling duurt twee weken.
+beheersen|Hij wil de taal goed beheersen.
+beheersing|Zijn beheersing van de taal is goed.
+beledigen|Ik wil je niet beledigen.
+belediging|Dat is een grove belediging.
+benadrukken|Zij wil dit punt benadrukken.
+beoogd|Het beoogde doel is bereikt.
+beslaan|Het terrein beslaat tien hectare.
+beslist|Dat is beslist niet waar.
+bevorderen|Sport kan de gezondheid bevorderen.
+bewaren|Kun je deze brief voor mij bewaren?
+beweegreden|Wat was zijn beweegreden?
+beweren|Hij blijft beweren dat het waar is.
+bewering|Die bewering klopt niet.
+boeien|Het verhaal kan me niet boeien.
+boeiend|Dat was een boeiend boek.
+braaf|Het kind is erg braaf.
+daadwerkelijk|Hij heeft het daadwerkelijk gedaan.
+daardoor|Daardoor kwam ik te laat.
+daarna|Daarna gingen we naar huis.
+daarom|Daarom blijf ik thuis.
+daarvoor|Ik heb daarvoor lang gespaard.
+dankzij|Dankzij jou ben ik op tijd.
+destijds|Destijds woonde ik in Rotterdam.
+diepte|De diepte van het meer is tien meter.
+doordringen|Het licht kan hier niet doordringen.
+doorzichtig|Het glas is helemaal doorzichtig.
+eis|Dat is een redelijke eis.
+eisen|Zij eisen een nieuwe regeling.
+elders|Ik zoek elders een baan.
+eng|De film was erg eng.
+ergernis|Zijn gedrag is een grote ergernis.
+fatsoenlijk|Zij wil een fatsoenlijke baan.
+fel|Er was een felle discussie.
+gaaf|Wat een gave auto heb jij!
+gaandeweg|Gaandeweg werd het donker.
+gebeurtenis|Het was een bijzondere gebeurtenis.
+geest|Zijn geest is nog erg scherp.
+gelijkwaardig|Mannen en vrouwen zijn gelijkwaardig.
+geloofwaardig|Haar verhaal is niet geloofwaardig.
+gemengd|Het gezelschap was gemengd.
+geoorloofd|Dat is niet geoorloofd.
+gespannen|De sfeer was erg gespannen.
+gevaarlijk|Deze weg is erg gevaarlijk.
+gevoelig|Hij is gevoelig voor kritiek.
+gids|De gids vertelt over de stad.
+gissen|Ik kan alleen maar gissen.
+gooien|Zij gooit de bal naar hem.
+grof|Hij gebruikt grove taal.
+grondig|Wij moeten dit grondig onderzoeken.
+grotendeels|Het werk is grotendeels klaar.
+gunst|Mag ik je een gunst vragen?
+haast|Ik heb nu geen haast.
+haasten|Je hoeft je niet te haasten.
+haastig|Hij liep haastig naar buiten.
+hetgeen|Hij zei hetgeen ik al verwachtte.
+hoop|Ik heb hoop op een betere toekomst.
+huidig|De huidige situatie is lastig.
+inademen|Je moet diep inademen.
+inademing|Bij elke inademing voel ik pijn.
+indien|Indien nodig bel ik je.
+inrichten|Wij gaan het huis nieuw inrichten.
+inrichting|De inrichting van de kamer is mooi.
+invalshoek|Dit onderwerp heeft een interessante invalshoek.
+inzet|Hij werkt met veel inzet.
+jargon|Dat jargon begrijp ik niet.
+keurig|Zij is altijd keurig gekleed.
+kleuter|De kleuter speelt in de zandbak.
+klusje|Ik heb nog een klein klusje.
+klussen|Hij gaat dit weekend klussen.
+knikken|Zij knikte ja.
+kring|Wij zaten in een kring.
+kriskras|De kinderen renden kriskras door de tuin.
+leiding|Zij neemt de leiding over het project.
+leidinggevende|Mijn leidinggevende is erg aardig.
+litteken|Hij heeft een litteken op zijn arm.
+mede|Dit is mede dankzij jou gelukt.
+meerderheid|De meerderheid stemde voor.
+mislukken|Het experiment kan mislukken.
+mits|Je mag mee, mits je op tijd bent.
+moeizaam|Het gesprek verliep moeizaam.
+mopperen|Hij moppert de hele dag.
+naald|Zij zocht een naald en draad.
+naarmate|Naarmate hij ouder werd, werd hij wijzer.
+nagenieten|Wij willen nog even nagenieten van de vakantie.
+nauw|Het pad is erg nauw.
+neigen|Hij neigt naar luiheid.
+ofschoon|Ofschoon het regent, gaan we wandelen.
+omstreden|Het besluit is erg omstreden.
+omwille|Ik doe het omwille van de kinderen.
+onderdrukken|Hij kon zijn lach niet onderdrukken.
+onderdrukking|De onderdrukking van het volk duurde jaren.
+ondergeschikt|Dat punt is ondergeschikt.
+onderhoud|De auto heeft onderhoud nodig.
+onderschatten|Je moet hem niet onderschatten.
+onderschatting|Dat was een grote onderschatting.
+onderscheid|Zij maakt geen onderscheid tussen mensen.
+onderscheiden|Ik kan die twee niet onderscheiden.
+ondersteunen|Wij willen jouw plan ondersteunen.
+ondertussen|Ondertussen kookte hij het eten.
+ontroerend|Het was een ontroerend verhaal.
+ontroering|Zij sprak met ontroering.
+onverstandig|Dat was onverstandig van je.
+onvoorstelbaar|Het verdriet is onvoorstelbaar.
+opdat|Ik help je opdat je kunt slagen.
+opeisen|Hij komt zijn geld opeisen.
+oproep|De politie deed een oproep aan getuigen.
+oproepen|De regering roept op tot kalmte.
+opsluiten|Zij willen de dief opsluiten.
+opvang|De opvang is vol.
+opvangen|Wij kunnen veel mensen opvangen.
+opvatten|Hij kan het verkeerd opvatten.
+opzichtig|Zij draagt opzichtige kleren.
+overbelast|Het netwerk is overbelast.
+overdrijven|Je moet niet overdrijven.
+overeenstemmen|Het verhaal moet overeenstemmen met de feiten.
+overeenstemming|Wij hebben overeenstemming bereikt.
+overigens|Overigens heb ik hem niet gezien.
+overkant|Aan de overkant staat een school.
+overmatig|Overmatig drinken is slecht.
+overnemen|Zij wil het bedrijf overnemen.
+overtuiging|Het is mijn diepe overtuiging.
+overweging|Dat is een goede overweging.
+pand|Het pand is te koop.
+peilen|Wij willen de stemming peilen.
+peiling|De peiling laat een duidelijk beeld zien.
+pikken|Ik pik dit niet langer.
+pittig|Het eten is erg pittig.
+platteland|Zij wonen op het platteland.
+prestatie|Dat is een grote prestatie.
+proppen|Hij probeert alles in zijn tas te proppen.
+redelijk|Dat is een redelijke prijs.
+rimpel|Zij heeft een rimpel in haar voorhoofd.
+schandelijk|Zijn gedrag is schandelijk.
+schattig|Wat een schattige hond!
+schets|Hij maakte een schets van het huis.
+schetsen|Zij wil de situatie kort schetsen.
+schuilen|Wij schuilen voor de regen.
+sinds|Sinds gisteren is hij ziek.
+stapelen|Zij stapelen de dozen op elkaar.
+staren|Hij staart uit het raam.
+suggestie|Dat is een goede suggestie.
+tekortkomen|Het kind mag niets tekortkomen.
+telkens|Hij komt telkens te laat.
+tenzij|Ik kom, tenzij het regent.
+toegang|De toegang is gratis.
+toeteren|De auto begon te toeteren.
+troep|Wat een troep ligt hier!
+trouw|De hond is erg trouw.
+uitademen|Je moet rustig uitademen.
+uitademing|Let op je uitademing.
+uitbundig|Zij vierden uitbundig feest.
+uiting|Dit is een uiting van respect.
+uitpuilen|Zijn tas puilt uit.
+uitsluitend|De winkel is uitsluitend online open.
+uitvinding|De fiets is een geweldige uitvinding.
+vandaar|Vandaar dat ik zo moe ben.
+verdeling|De verdeling van het werk is eerlijk.
+verhouding|Zij hebben een goede verhouding.
+vermindering|Er is een vermindering van de kosten.
+verovering|De verovering van de stad duurde lang.
+verpesten|Je gaat mijn dag verpesten.
+verrassing|Het was een grote verrassing.
+verrichten|Zij verricht belangrijk werk.
+verrichting|Dat is een knappe verrichting.
+versieren|Wij gaan de kamer versieren.
+versiering|De versiering is erg mooi.
+verslaving|Verslaving is een ernstig probleem.
+verslinden|Hij verslindt het ene boek na het andere.
+verstand|Gebruik je verstand!
+verstoren|Het lawaai gaat de rust verstoren.
+verwarren|Ik wil je niet verwarren.
+verwarrend|Dit is erg verwarrend.
+verwijderen|Kun je dit bestand verwijderen?
+verwijdering|De verwijdering duurt even.
+verzwakken|Ziekte kan je verzwakken.
+vloeiend|Zij spreekt vloeiend Nederlands.
+voorrang|Fietsers hebben hier voorrang.
+voortijdig|Hij verliet de school voortijdig.
+voortzetten|Wij moeten het gesprek voortzetten.
+voortzetting|De voortzetting van het project is zeker.
+waarneming|Zijn waarneming was correct.
+zielig|Het arme dier is zielig.
+zogenaamd|Hij is zogenaamd ziek.
+zolang|Zolang je hier bent, help ik je.
+zonde|Het is zonde van het eten.
+zorg|Hij heeft veel zorg voor zijn kinderen.
+zowat|Het is zowat tien uur.
+zwerven|Hij zwerft de hele dag door de stad.
+overtuigen|Hij kan iedereen overtuigen.
+overwegen|Ik ga dat plan overwegen.
+onderhouden|Hij moet de tuin onderhouden.
+opvatting|Ik heb een andere opvatting.
+neiging|Hij heeft de neiging te laat te komen.
+toevoeging|Dat is een nuttige toevoeging.
+uitvinden|Wie heeft de telefoon uitgevonden?
+verminderen|Wij willen het afval verminderen.
+veroveren|Zij veroverden het hele land.
+verzet|Er was veel verzet tegen het plan.
+verwarring|Er heerste grote verwarring.
+waarnemen|Ik kan niets waarnemen.
+werkelijkheid|Dat is niet de werkelijkheid.
+schoonheid|Ik bewonder de schoonheid van de natuur.
+suggereren|Wat wil je daarmee suggereren?
+verdelen|Wij verdelen het werk onder elkaar.
+verrassen|Ik wil je verrassen.
+verstandig|Dat is een verstandige keuze.
+schande|Het is een schande!`.split("\n").map(l=>{const[w,t]=l.split("|"),v=VOC.find(x=>x.w==w);return{w,s:t,c:v?v.c:0}});
+const ALL=[...SEN.map((t,i)=>({s:t,c:SC[i]})),...SV];
+/* IDIOMEN (3 lives) */
+let is=0,il=3;
+function idi(fresh){
+ if(fresh!==false){is=0;il=3}
+ const q=pick(pool(IDI)),ms=sh([q,...sh(IDI.filter(x=>x.m!=q.m)).slice(0,3)]);let ans=null;if(TS())tstart(Math.round(TS()*1.5),()=>{if(ans==null){ans=-1;il--;bad();rec(keyOf(q),0);draw()}});
+ function draw(){
+  if(il<=0){tstop();if(is>(G.ib||0)){G.ib=is;save()}
+   h(`<div class="big">💀</div><div class="msg">Game over! Score: ${is} · Record: ${G.ib||0}</div><div class="row"><button class="b" id="nx">Opnieuw spelen</button></div>`);
+   document.getElementById("nx").onclick=()=>idi();return}
+  h(`<div class="sc"><span>${"❤️".repeat(il)}</span><span>Score: ${is}</span>${chSel()}</div>
+  ${tbar()}<div class="q">“${q.t}”</div>
+  <div style="display:grid;gap:8px">${ms.map((o,n)=>`<button class="b ${ans!=null?(o==q?"ok":n==ans?"no":""):""}" ${ans!=null?"disabled":""} data-m="${n}">${o.m}</button>`).join("")}</div>
+  <div class="msg" style="color:var(--${ans!=null&&ms[ans]==q?"ok":"no"})">${ans!=null?(ms[ans]==q?"Juist! ✓":"Fout — het betekent: "+q.m):""}</div>
+  <div class="row">${ans!=null?'<button class="b" id="nx">Volgende →</button>':""}${knBtn()}</div>`);
+  bindCh();
+  app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{tstop();ans=+b.dataset.m;rec(keyOf(q),ms[ans]==q);if(ms[ans]==q){is++;good(10);if(is%10==0)won()}else{il--;bad()}draw()});
+  const nx=document.getElementById("nx");if(nx)nx.onclick=()=>idi(false);bindKn(keyOf(q),()=>idi(false));
+ }
+ draw();
+}
+/* VOORTGANG */
+let PG={st:{},kn:{}},pty="v";
+try{Object.assign(PG,JSON.parse(localStorage.getItem("wt_pg")||"{}"))}catch(e){}
+const savePG=()=>{try{localStorage.setItem("wt_pg",JSON.stringify(PG))}catch(e){}};
+const keyOf=x=>x.r?"r:"+x.r:x.p?"p:"+x.t+"|"+x.p:x.m?"i:"+x.t:x.s&&!x.w?"s:"+x.s:"v:"+x.w;
+const isK=x=>!!PG.kn[keyOf(x)];
+function rec(k,ok){const t=PG.st[k]||(PG.st[k]={c:0,w:0,s:0});if(ok){t.c++;t.s++}else{t.w++;t.s=0}savePG()}
+function pick(a){const ws=a.map(x=>{const t=PG.st[keyOf(x)];return t?Math.max(.4,1+Math.min(3,t.w)-Math.min(t.s,3)*.5):2});let r=Math.random()*ws.reduce((p,c)=>p+c,0);for(let i=0;i<a.length;i++){r-=ws[i];if(r<=0)return a[i]}return a[a.length-1]}
+const knBtn=()=>'<button class="b" id="kn">✓ Ik ken dit al</button>';
+function bindKn(k,next){const b=document.getElementById("kn");if(b)b.onclick=()=>{tstop();PG.kn[k]=1;savePG();toast("✓ Uit de spellen gehaald");next()}}
+const items=()=>[...VOC.map(x=>({k:"v:"+x.w,l:x.w+" = "+(EN[x.w]||""),c:x.c,y:"v"})),...PR.map(x=>({k:"p:"+x.t+"|"+x.p,l:x.t+" "+x.p,c:x.c,y:"p"})),...IDI.map(x=>({k:"i:"+x.t,l:x.t,c:x.c,y:"i"})),...IRR.map(x=>({k:"r:"+x.r,l:x.r+" – "+x.f[0],c:8,y:"r"}))];
+function prog(){
+ const it=items(),isM=x=>PG.kn[x.k]||(PG.st[x.k]&&PG.st[x.k].s>=3),m=it.filter(isM).length;
+ const bar=(a,b)=>`<div class="bar" style="margin:3px 0"><i style="width:${b?a/b*100:0}%"></i></div>`;
+ const rows=[1,2,3,4,5,6,7,8,0].map(c=>{const f=it.filter(x=>x.c==c);if(!f.length)return"";const a=f.filter(isM).length;return `<div class="sc" style="margin:8px 0 0"><span>${c==8?"Onregelmatige werkwoorden":c==7?"Mijn lijst":c?"Hoofdstuk "+c:"Overig"}</span><span>${a}/${f.length}</span></div>${bar(a,f.length)}`}).join("");
+ const weak=it.filter(x=>{const t=PG.st[x.k];return t&&t.w>t.c}).sort((a,b)=>(PG.st[b.k].w-PG.st[b.k].c)-(PG.st[a.k].w-PG.st[a.k].c)).slice(0,10);
+ const list=it.filter(x=>x.y==pty&&(!ch||x.c==ch||x.y=="r"));
+ h(`<div class="sc"><span>Beheerst (3× goed op rij of bekend)</span><span>${m}/${it.length} · ${Math.round(m/it.length*100)}%</span></div>${bar(m,it.length)}${rows}
+ <div class="sc" style="margin-top:14px"><b>Moeilijkste items</b></div>
+ ${weak.length?weak.map(x=>`<div class="it"><span>${esc(x.l)}</span><span>✗ ${PG.st[x.k].w} ✓ ${PG.st[x.k].c}</span></div>`).join(""):'<div class="sc">Nog geen fouten. Speel een paar rondes!</div>'}
+ <div class="sc" style="margin-top:14px"><b>Bekend: ${Object.keys(PG.kn).length} (aangevinkt = uit de spellen)</b></div>
+ <div class="sc"><select id="pt"><option value="v">Woorden</option><option value="p">Voorzetsels</option><option value="i">Idiomen</option><option value="r">Onregelmatig</option></select>${chSel()}</div>
+ <div style="max-height:260px;overflow:auto">${list.map(x=>`<label class="it"><span>${esc(x.l)}</span><input type="checkbox" data-k="${esc(x.k)}" ${PG.kn[x.k]?"checked":""} style="width:auto;margin:0"></label>`).join("")}</div>
+ <div class="row"><button class="b" id="rk">Reset bekende woorden</button><button class="b" id="rp">Reset voortgang</button></div>`);
+ bindCh();const sel=document.getElementById("pt");sel.value=pty;sel.onchange=()=>{pty=sel.value;prog()};
+ app.querySelectorAll("[data-k]").forEach(c=>c.onchange=()=>{if(c.checked)PG.kn[c.dataset.k]=1;else delete PG.kn[c.dataset.k];savePG()});
+ document.getElementById("rk").onclick=()=>{PG.kn={};savePG();prog()};
+ document.getElementById("rp").onclick=()=>{PG.st={};savePG();prog()};
+}
+/* VERLEDEN TIJD */
+const ABL={h:"hebben",z:"zijn",hz:"hebben/zijn"},IRR=[];
+(()=>{let pg=1;`bakken bakte bakten gebakken h
+bederven bedierf bedierven bedorven hz
+bedriegen bedroog bedrogen bedrogen h
+beginnen begon begonnen begonnen z
+begrijpen begreep begrepen begrepen h
+bevallen beviel bevielen bevallen z
+bewegen bewoog bewogen bewogen h
+bezoeken bezocht bezochten bezocht h
+bidden bad baden gebeden h
+bieden bood boden geboden h
+bijten beet beten gebeten h
+binden bond bonden gebonden h
+blazen blies bliezen geblazen h
+blijken bleek bleken gebleken z
+blijven bleef bleven gebleven z
+braden braadde braadden gebraden h
+breken brak braken gebroken h
+brengen bracht brachten gebracht h
+buigen boog bogen gebogen h
+denken dacht dachten gedacht h
+doen deed deden gedaan h
+dragen droeg droegen gedragen h
+drijven dreef dreven gedreven hz
+drinken dronk dronken gedronken h
+duiken dook doken gedoken hz
+dwingen dwong dwongen gedwongen h
+ervaren ervoer ervoeren ervaren h
+eten at aten gegeten h
+fluiten floot floten gefloten h
+gaan ging gingen gegaan z
+genezen genas genazen genezen hz
+genieten genoot genoten genoten h
+geven gaf gaven gegeven h
+gieten goot goten gegoten h
+glijden gleed gleden gegleden hz
+glimmen glom glommen geglommen h
+graven groef groeven gegraven h
+hangen hing hingen gehangen h
+hebben had hadden gehad h
+helpen hielp hielpen geholpen h
+---
+heten heette heetten geheten h
+houden hield hielden gehouden h
+kiezen koos kozen gekozen h
+kijken keek keken gekeken h
+klimmen klom klommen geklommen hz
+klinken klonk klonken geklonken h
+knijpen kneep knepen geknepen h
+komen kwam kwamen gekomen z
+kopen kocht kochten gekocht h
+krijgen kreeg kregen gekregen h
+krimpen kromp krompen gekrompen hz
+kruipen kroop kropen gekropen hz
+kunnen kon konden gekund h
+lachen lachte lachten gelachen h
+laden laadde laadden geladen h
+laten liet lieten gelaten h
+lezen las lazen gelezen h
+liegen loog logen gelogen h
+liggen lag lagen gelegen h
+lijden leed leden geleden h
+lijken leek leken geleken h
+lopen liep liepen gelopen hz
+meten mat maten gemeten h
+moeten moest moesten gemoeten h
+mogen mocht mochten gemogen h
+nemen nam namen genomen h
+ontbijten ontbeet ontbeten ontbeten h
+ontwerpen ontwierp ontwierpen ontworpen h
+overlijden overleed overleden overleden z
+raden raadde raadden geraden h
+rijden reed reden gereden hz
+roepen riep riepen geroepen h
+ruiken rook roken geroken h
+scheiden scheidde scheidden gescheiden hz
+schelden schold scholden gescholden h
+schenken schonk schonken geschonken h
+scheren schoor schoren geschoren h
+schieten schoot schoten geschoten h
+schijnen scheen schenen geschenen h
+schrijven schreef schreven geschreven h
+schrikken schrok schrokken geschrokken z
+schuiven schoof schoven geschoven hz
+slaan sloeg sloegen geslagen h
+---
+slapen sliep sliepen geslapen h
+slijpen sleep slepen geslepen h
+sluipen sloop slopen geslopen z
+sluiten sloot sloten gesloten h
+smelten smolt smolten gesmolten h
+snijden sneed sneden gesneden h
+snuiten snoot snoten gesnoten h
+snuiven snoof snoven gesnoven h
+spijten speet - gespeten h
+spreken sprak spraken gesproken h
+springen sprong sprongen gesprongen hz
+spuiten spoot spoten gespoten h
+staan stond stonden gestaan h
+steken stak staken gestoken h
+stelen stal stalen gestolen h
+sterven stierf stierven gestorven z
+stijgen steeg stegen gestegen z
+stinken stonk stonken gestonken h
+strijden streed streden gestreden h
+strijken streek streken gestreken h
+trekken trok trokken getrokken hz
+vallen viel vielen gevallen z
+vangen ving vingen gevangen h
+varen voer voeren gevaren hz
+vechten vocht vochten gevochten h
+verbieden verbood verboden verboden h
+verdwijnen verdween verdwenen verdwenen z
+vergelijken vergeleek vergeleken vergeleken h
+vergeten vergat vergaten vergeten hz
+verliezen verloor verloren verloren hz
+vermijden vermeed vermeden vermeden h
+verraden verraadde verraadden verraden h
+vertrekken vertrok vertrokken vertrokken z
+verwijten verweet verweten verweten h
+verzinnen verzon verzonnen verzonnen h
+vinden vond vonden gevonden h
+vliegen vloog vlogen gevlogen hz
+vouwen vouwde vouwden gevouwen h
+vragen vroeg vroegen gevraagd h
+vriezen vroor - gevroren h
+wassen waste wasten gewassen hz
+wegen woog wogen gewogen h
+werpen wierp wierpen geworpen h
+weten wist wisten geweten h
+wijzen wees wezen gewezen h
+willen wilde/wou wilden/wouden gewild h
+---
+winnen won wonnen gewonnen h
+worden werd werden geworden z
+wrijven wreef wreven gewreven h
+zeggen zei zeiden gezegd h
+zenden zond zonden gezonden h
+zien zag zagen gezien h
+zijn was waren geweest z
+zingen zong zongen gezongen h
+zinken zonk zonken gezonken z
+zitten zat zaten gezeten h
+zoeken zocht zochten gezocht h
+zuigen zoog zogen gezogen h
+zullen zou zouden - h
+zwemmen zwom zwommen gezwommen hz
+zwijgen zweeg zwegen gezwegen h`.split("\n").forEach(l=>{if(l=="---"){pg++;return}const[a,b,c,d,e]=l.split(" ");IRR.push({r:a,f:[b,c,d],a:e,c:pg})})})();
+let vm="t",vl=1,vg=0;
+const FN=["Imperfectum enkelvoud","Imperfectum meervoud","Perfectum (voltooid deelwoord)"],okf=(i,a)=>a.split("/").includes(i.trim().toLowerCase());
+const suf=(a,b)=>{let n=0;while(n<a.length&&n<b.length&&a[a.length-1-n]==b[b.length-1-n])n++;return n};
+function ver(){
+ const pl=IRR.filter(x=>(!vg||x.c==vg)),q=pick(pl.filter(x=>!PG.kn["r:"+x.r]).length?pl.filter(x=>!PG.kn["r:"+x.r]):pl);
+ const av=[0,1,2].filter(i=>q.f[i]!="-"),fi=sh(av)[0],idx=vl==2?av:[0];let ans=null,res=null,vals={};
+ const top=()=>`<div class="sc" style="flex-wrap:wrap"><select id="vm"><option value="t">Typen</option><option value="m">Meerkeuze</option></select>${vm=="t"?'<select id="vl"><option value="1">Niveau 1: enkelvoud</option><option value="2">Niveau 2: alle vormen</option></select>':""}<select id="vg"><option value="0">Alle pagina's</option>${[1,2,3,4].map(i=>`<option value="${i}">Pagina ${i}</option>`).join("")}</select></div>`;
+ const bind=()=>{const a=document.getElementById("vm"),b=document.getElementById("vl"),c=document.getElementById("vg");a.value=vm;a.onchange=()=>{vm=a.value;ver()};if(b){b.value=vl;b.onchange=()=>{vl=+b.value;ver()}}c.value=vg;c.onchange=()=>{vg=+c.value;ver()};const n=document.getElementById("nx");if(n)n.onclick=ver;bindKn("r:"+q.r,ver)};
+ const kn='<button class="b" id="kn">✓ Ik ken dit al</button>';
+ if(vm=="t"){
+  const chk=force=>{idx.forEach(i=>{const e=document.getElementById("i"+i);if(e)vals[i]=e.value});res=idx.map(i=>!force&&okf(vals[i]||"",q.f[i]));const all=res.every(Boolean);tstop();rec("r:"+q.r,all);if(all)good(10+idx.length*5);else bad();draw()};
+  if(TS())tstart(Math.round(TS()*idx.length*1.5),()=>chk(true));
+  function draw(){
+   const all=res&&res.every(Boolean);
+   h(top()+tbar()+`<div class="q">${q.r}</div>${idx.includes(2)?`<div class="sc" style="justify-content:center">hulpwerkwoord: ${ABL[q.a]}</div>`:""}
+   ${idx.map(i=>`<input id="i${i}" placeholder="${FN[i]}" value="${esc(vals[i]||"")}" ${res?"disabled":""} autocomplete="off" autocapitalize="off" spellcheck="false">`).join("")}
+   ${res?`<div class="msg" style="color:var(--${all?"ok":"no"})">${all?"Juist! ✓":"Niet helemaal"}</div>`+idx.map((i,n)=>`<div class="it"><span>${FN[i]}</span><span style="color:var(--${res[n]?"ok":"no"})">${res[n]?"✓":"✗"} <b>${q.f[i]}</b></span></div>`).join(""):""}
+   <div class="row">${res?'<button class="b" id="nx">Volgende →</button>':'<button class="b" id="ck">Controleer</button>'}${kn}</div>`);
+   bind();const ck=document.getElementById("ck");if(ck)ck.onclick=()=>chk();
+   app.querySelectorAll("input").forEach(e=>{e.onkeydown=k=>{if(k.key=="Enter"){res?ver():chk()}}});
+   if(!res){const f=document.getElementById("i"+idx[0]);if(f)f.focus()}
+  }
+  draw();
+ }else{
+  const c0=q.f[fi].split("/")[0],st=q.r.replace(/en$/,""),kf=/(t|k|f|s|c|ch|p)$/.test(st),rg=[st+(kf?"te":"de"),st+(kf?"ten":"den"),(/^(be|ver|ont|er|ge)/.test(q.r)?"":"ge")+st+(kf?"t":"d")][fi];
+  const oth=sh(IRR.filter(x=>x!=q&&x.f[fi]!="-").map(x=>x.f[fi].split("/")[0])).sort((a,b)=>suf(b,c0)-suf(a,c0)).slice(0,8);
+  const opts=sh([...new Set([c0,rg,...sh(oth)])].filter(o=>o==c0||!q.f[fi].split("/").includes(o)).slice(0,4).concat([c0]).filter((v,i,a)=>a.indexOf(v)==i)).slice(0,4);
+  if(!opts.includes(c0))opts[0]=c0;
+  if(TS())tstart(TS(),()=>{if(ans==null){ans="⏰";rec("r:"+q.r,0);bad();draw()}});
+  function draw(){
+   h(top()+tbar()+`<div class="q">${q.r}</div><div class="sc" style="justify-content:center">${FN[fi]}${fi==2?" · "+ABL[q.a]:""}</div>
+   <div style="display:grid;gap:8px">${opts.map(o=>`<button class="b ${ans?(o==c0?"ok":o==ans?"no":""):""}" ${ans?"disabled":""} data-o="${esc(o)}">${esc(o)}</button>`).join("")}</div>
+   <div class="msg" style="color:var(--${ans==c0?"ok":"no"})">${ans?(ans==c0?"Juist! ✓":"Fout — "+q.f[fi]):""}</div>
+   <div class="row">${ans?'<button class="b" id="nx">Volgende →</button>':""}${kn}</div>`);
+   bind();app.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{tstop();ans=b.dataset.o;rec("r:"+q.r,ans==c0);if(ans==c0)good(8);else bad();draw()});
+  }
+  draw();
+ }
+}
+/* MIJN WOORDEN */
+let MY={v:[],p:[],i:[]},mt="v",mmsg="";
+try{MY=Object.assign(MY,JSON.parse(localStorage.getItem("wt_my")||"{}"))}catch(e){}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function rebuild(){
+ [VOC,PR,IDI,ALL].forEach(a=>{for(let i=a.length-1;i>=0;i--)if(a[i].my)a.splice(i,1)});
+ MY.v.forEach(x=>{VOC.push({w:x.w,c:7,my:1});EN[x.w]=x.en;if(x.s)ALL.push({s:x.s,c:7,w:x.w,my:1})});
+ MY.p.forEach(x=>PR.push({t:x.t,p:x.p,c:7,my:1}));
+ MY.i.forEach(x=>IDI.push({t:x.t,m:x.m,c:7,my:1}));
+}
+function addRow(a){a=a.map(x=>(x||"").trim());if(!a[0]||!a[1])return 0;
+ if(mt=="v")MY.v.push({w:a[0].toLowerCase(),en:a[1],s:a[2]||""});
+ else if(mt=="p")MY.p.push({t:a[0],p:a[1].toLowerCase()});
+ else MY.i.push({t:a[0],m:a[1]});return 1}
+function persist(){try{localStorage.setItem("wt_my",JSON.stringify(MY))}catch(e){}rebuild()}
+function mine(){
+ const L={v:["Nederlands woord","Engels","Voorbeeldzin (optioneel)"],p:["Werkwoord (bv. wachten)","Voorzetsel (bv. op)"],i:["Idioom","Betekenis"]}[mt];
+ const show=x=>mt=="v"?`${esc(x.w)} = ${esc(x.en)}${x.s?" · "+esc(x.s):""}`:mt=="p"?`${esc(x.t)} <b>${esc(x.p)}</b>`:`${esc(x.t)} = ${esc(x.m)}`;
+ h(`<div class="sc"><span>Mijn lijst: ${MY.v.length} woorden · ${MY.p.length} voorzetsels · ${MY.i.length} idiomen</span></div>
+ <div class="sc">Je woorden doen mee bij “Alle hoofdstukken” en bij “Mijn woorden” in elk spel.</div>
+ <select id="mt" style="margin-bottom:8px"><option value="v">Woord</option><option value="p">Werkwoord + voorzetsel</option><option value="i">Idioom</option></select>
+ ${L.map((x,n)=>`<input id="f${n}" placeholder="${x}">`).join("")}
+ <div class="row" style="margin:0 0 12px"><button class="b" id="add">+ Toevoegen</button></div>
+ <textarea id="bulk" placeholder="Meerdere tegelijk, één per regel, gescheiden door =  (bv. aarzelen = to hesitate)"></textarea>
+ <div class="row" style="margin:0 0 6px"><button class="b" id="bk">Lijst toevoegen</button></div>
+ <div class="msg">${mmsg}</div>
+ <div>${MY[mt].map((x,n)=>`<div class="it"><span>${show(x)}</span><button class="b" data-d="${n}">✕</button></div>`).join("")}</div>
+ <textarea id="bak" style="margin-top:12px" placeholder="Back-up: Exporteer om te kopiëren, plak hier en klik Importeer op een ander apparaat"></textarea>
+ <div class="row" style="margin-top:0"><button class="b" id="ex">Exporteer</button><button class="b" id="im">Importeer</button></div>`);
+ const sel=document.getElementById("mt");sel.value=mt;sel.onchange=()=>{mt=sel.value;mmsg="";mine()};
+ document.getElementById("add").onclick=()=>{const ok=addRow(L.map((_,n)=>document.getElementById("f"+n).value));mmsg=ok?"✓ Toegevoegd":"Vul minstens de eerste twee velden in.";persist();mine()};
+ document.getElementById("bk").onclick=()=>{let n=0;document.getElementById("bulk").value.split("\n").forEach(l=>{n+=addRow(l.split("="))});mmsg="✓ "+n+" toegevoegd";persist();mine()};
+ app.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{MY[mt].splice(+b.dataset.d,1);persist();mine()});
+ document.getElementById("ex").onclick=()=>{const t=JSON.stringify({...MY,pg:PG});document.getElementById("bak").value=t;try{navigator.clipboard.writeText(t)}catch(e){}};
+ document.getElementById("im").onclick=()=>{try{const o=JSON.parse(document.getElementById("bak").value);["v","p","i"].forEach(k=>(Array.isArray(o[k])?o[k]:[]).forEach(x=>{if(x&&typeof x=="object"&&!MY[k].some(y=>JSON.stringify(y)==JSON.stringify(x)))MY[k].push(x)}));if(o.pg){Object.assign(PG.kn,o.pg.kn||{});for(const k in o.pg.st||{}){const a=PG.st[k],b=o.pg.st[k];if(!a||b.c+b.w>a.c+a.w)PG.st[k]=b}savePG()}mmsg="✓ Geïmporteerd"}catch(e){mmsg="Ongeldige back-up."}persist();mine()};
+ hdr();
+}
+rebuild();hdr();go("Galgje");
+</script><script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
+</script>
+</body></html>
