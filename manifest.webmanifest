@@ -3,14 +3,24 @@
   "short_name": "Woordentrainer",
   "description": "Nederlandse woordenschat oefenen.",
   "lang": "nl",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/Vocab-Trainer/",
+  "scope": "/Vocab-Trainer/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#fbfaf7",
   "theme_color": "#0e8a8f",
   "icons": [
-    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "/Vocab-Trainer/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Vocab-Trainer/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
