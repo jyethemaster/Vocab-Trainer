@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Woordentrainer">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="/Vocab-Trainer/manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Woordentrainer</title>
@@ -718,6 +718,8 @@ function mine(){
 }
 rebuild();hdr();go("Galgje");
 </script><script>
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/Vocab-Trainer/sw.js", {
+  scope: "/Vocab-Trainer/"
+}).catch(()=>{}));}
 </script>
 </body></html>
