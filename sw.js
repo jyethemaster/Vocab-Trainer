@@ -1,12 +1,12 @@
-const CACHE_NAME = "woordentrainer-v1";
+const CACHE_NAME = "woordentrainer-v2";
 
 const APP_FILES = [
   "/Vocab-Trainer/",
   "/Vocab-Trainer/index.html",
   "/Vocab-Trainer/manifest.webmanifest",
-  "/Vocab-Trainer/icons/icon-192.png",
-  "/Vocab-Trainer/icons/icon-512.png",
-  "/Vocab-Trainer/icons/icon.svg"
+  "/Vocab-Trainer/icon-192.png",
+  "/Vocab-Trainer/icon-512.png",
+  "/Vocab-Trainer/icon.svg"
 ];
 
 self.addEventListener("install", (event) => {
@@ -19,18 +19,20 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
+    caches.keys().then((keys) => {
+      return Promise.all(
         keys
           .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  if (event.request.method !== "GET") {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
